@@ -52,7 +52,6 @@ npm run test
 Environment variables:
 
 - `VITE_RUNNER_PARENT_ORIGINS`: Comma-separated list of allowed parent origins. Defaults to `*` in development and an empty list in production when unset.
-- `VITE_BASE_PATH`: Optional base path for repository-path GitHub Pages deployments.
 
 The example configuration in `.env.example` allows `https://synth.textmode.art` as the production parent origin.
 

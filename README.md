@@ -7,9 +7,6 @@
 
 </div>
 
-> [!IMPORTANT]
-> **Work in progress**: This project is currently in active development. Runtime behavior and integration details are subject to change.
-
 `rastergang.textmode.art` is a browser-based sandbox runner for [`synth.textmode.art`](https://synth.textmode.art). It runs user sketches inside an isolated iframe, boots a `textmode.js` rendering context, and communicates execution state back to the parent editor over a small message protocol.
 
 ## Features

@@ -23,7 +23,7 @@ export function createRunner(factory: RunnerFactory, debugWarningMessage: string
 			search: window.location.search,
 			hostname: window.location.hostname,
 			allowedParentOrigins: allowedParentOriginsArray,
-			productionFallbackUrl: 'https://synth.textmode.art',
+			productionFallbackUrl: import.meta.env.VITE_RUNNER_FALLBACK_URL || 'https://synth.textmode.art',
 			debugWarningMessage,
 			onRedirect: (url) => {
 				window.location.href = url;

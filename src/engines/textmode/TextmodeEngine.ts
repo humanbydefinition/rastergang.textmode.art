@@ -4,10 +4,18 @@ import { ExecutionContext } from '@/engines/textmode/ExecutionContext';
 import { ErrorReporter } from '@/engines/textmode/ErrorReporter';
 import { FrameScheduler } from '@/engines/textmode/FrameScheduler';
 import {
+	EDITOR_PROTOCOL_VERSION,
+	PROTOCOL_VERSION,
 	isInitMessage,
 	isParentMessage,
+	type ExportMessage,
+	type LoadFontMessage,
 	type ParentToRunnerMessage,
+	type PlaybackMessage,
+	type ProtocolVersion,
+	type RunnerCapabilities,
 	type RunnerToParentMessage,
+	type RuntimeSettings,
 	type WindowToRunnerMessage,
 } from '@/protocol/textmode';
 
@@ -28,10 +36,16 @@ export class TextmodeEngine {
 	private hasStarted = false;
 	private textmode: TextmodeManager;
 	private context: ExecutionContext;
+	private protocolVersion: ProtocolVersion = PROTOCOL_VERSION;
 	private synthErrorReported = false;
 	private isExecuting = false;
+	private playbackMonitorId: number | null = null;
+	private lastPlaybackStateSentAt = 0;
+	private lastPlaybackFrameSent = -1;
 	private errorHandler: ((event: ErrorEvent) => void) | null = null;
 	private rejectionHandler: ((event: PromiseRejectionEvent) => void) | null = null;
+	private runtimeInitialized = false;
+	private runtimeEventHandlersAttached = false;
 	private readonly handleUserInteraction = (): void => {
 		this.transport.send({ type: 'USER_INTERACTION' });
 	};
@@ -47,7 +61,7 @@ export class TextmodeEngine {
 		this.errorReporter = new ErrorReporter((msg) => this.transport.send(msg));
 		this.scheduler = new FrameScheduler({
 			isRendering: () => this.isRendering(),
-			onExecute: (code, isSoftReset) => this.executeInternal(code, isSoftReset),
+			onExecute: (code, isSoftReset, requestId) => this.executeInternal(code, isSoftReset, requestId),
 		});
 
 		this.textmode = new TextmodeManager();
@@ -62,9 +76,16 @@ export class TextmodeEngine {
 			onPortExtracted: (port) => {
 				this.transport.attach(port, this.handlePortMessage as (event: MessageEvent) => void);
 			},
-			onReady: () => {
+			onReady: (initMessage) => {
+				if (isInitMessage(initMessage)) {
+					this.protocolVersion = initMessage.v;
+				}
 				window.removeEventListener('message', this.handleInitMessage);
-				this.transport.send({ type: 'READY' });
+				this.transport.send({
+					type: 'READY',
+					v: this.protocolVersion,
+					capabilities: this.protocolVersion === EDITOR_PROTOCOL_VERSION ? this.getCapabilities() : undefined,
+				});
 			},
 		});
 	}
@@ -73,7 +94,6 @@ export class TextmodeEngine {
 		if (this.hasStarted) return;
 		this.hasStarted = true;
 		this.setupGlobalErrorHandlers((error) => this.errorReporter.report(error as Error | string | Event));
-		this.init();
 		window.addEventListener('message', this.handleInitMessage);
 	}
 
@@ -117,10 +137,36 @@ export class TextmodeEngine {
 
 		switch (msg.type) {
 			case 'RUN_CODE':
-				this.scheduleCode(msg.code, false);
+				this.ensureRuntimeInitialized();
+				this.scheduleCode(msg.code, false, msg.requestId);
 				break;
 			case 'SOFT_RESET':
-				this.scheduleCode(msg.code, true);
+				this.ensureRuntimeInitialized();
+				this.scheduleCode(msg.code, true, msg.requestId);
+				break;
+			case 'CONFIGURE_RUNTIME':
+				this.configureRuntime(msg.settings);
+				this.sendPlaybackState(msg.requestId);
+				break;
+			case 'SET_SETTINGS':
+				this.ensureRuntimeInitialized();
+				this.textmode.updateSettings(msg.settings);
+				this.sendPlaybackState(msg.requestId);
+				break;
+			case 'EXPORT':
+				this.ensureRuntimeInitialized();
+				void this.handleExportMessage(msg);
+				break;
+			case 'LOAD_FONT':
+				this.ensureRuntimeInitialized();
+				void this.handleLoadFontMessage(msg);
+				break;
+			case 'PLAYBACK':
+				this.ensureRuntimeInitialized();
+				this.handlePlaybackMessage(msg);
+				break;
+			case 'PING':
+				this.transport.send({ type: 'PONG', nonce: msg.nonce, timestamp: Date.now() });
 				break;
 			case 'DISPOSE':
 				this.dispose();
@@ -128,23 +174,49 @@ export class TextmodeEngine {
 		}
 	};
 
-	private scheduleCode(code: string, isSoftReset: boolean): void {
-		this.scheduler.schedule({ code, isSoftReset });
+	private scheduleCode(code: string, isSoftReset: boolean, requestId?: string): void {
+		this.scheduler.schedule({ code, isSoftReset, requestId });
 	}
 
-	private executeInternal(code: string, isSoftReset: boolean): void {
-		void this.execute(code, isSoftReset);
+	private executeInternal(code: string, isSoftReset: boolean, requestId?: string): void {
+		void this.execute(code, isSoftReset, requestId);
 	}
 
-    /**
-     * Initialize Textmode environment
-     */
-	init(): void {
-		this.textmode.init();
+	/**
+	 * Initialize Textmode environment lazily. v2 editor clients send
+	 * CONFIGURE_RUNTIME first so the first canvas is created with editor
+	 * dimensions; v1 synth clients still get the legacy default runtime on
+	 * their first RUN_CODE.
+	 */
+	private ensureRuntimeInitialized(settings?: Partial<RuntimeSettings>): void {
+		if (!this.runtimeInitialized) {
+			this.textmode.init(settings);
+			this.runtimeInitialized = true;
+			this.attachRuntimeEventHandlers();
+			return;
+		}
+
+		if (settings) {
+			this.textmode.configure(settings as RuntimeSettings);
+		}
+	}
+
+	private configureRuntime(settings: RuntimeSettings): void {
+		if (!this.runtimeInitialized) {
+			this.ensureRuntimeInitialized(settings);
+			return;
+		}
+
+		this.textmode.configure(settings);
+	}
+
+	private attachRuntimeEventHandlers(): void {
+		if (this.runtimeEventHandlersAttached) return;
+
+		this.runtimeEventHandlersAttached = true;
 		window.addEventListener('pointerdown', this.handleUserInteraction, { passive: true });
 		window.addEventListener('keydown', this.handleKeyDown);
 
-		// Setup synth error handler
 		this.textmode.setupSynthErrorHandler((error) => {
 			if (!this.synthErrorReported) {
 				this.synthErrorReported = true;
@@ -163,7 +235,10 @@ export class TextmodeEngine {
 		this.scheduler.cancel();
 		this.context.dispose();
 		this.textmode.dispose();
+		this.runtimeInitialized = false;
+		this.runtimeEventHandlersAttached = false;
 		this.synthErrorReported = false;
+		this.stopPlaybackMonitor();
 
 		window.removeEventListener('message', this.handleInitMessage);
 		window.removeEventListener('pointerdown', this.handleUserInteraction);
@@ -183,7 +258,9 @@ export class TextmodeEngine {
     /**
      * Execute code
      */
-	async execute(code: string, isSoftReset: boolean): Promise<void> {
+	async execute(code: string, isSoftReset: boolean, requestId?: string): Promise<void> {
+		this.ensureRuntimeInitialized();
+
 		// Reset synth error flags
 		this.synthErrorReported = false;
 		this.isExecuting = true;
@@ -195,7 +272,7 @@ export class TextmodeEngine {
 			// Validate syntax
 			const validation = this.context.validateSyntax(code);
 			if (!validation.valid) {
-				this.errorReporter.report(validation.error!);
+				this.errorReporter.report(validation.error!, requestId);
 				return;
 			}
 
@@ -208,10 +285,10 @@ export class TextmodeEngine {
 			if (result.success) {
 				// Success!
 				this.lastWorkingCode = code;
-				this.transport.send({ type: 'RUN_OK', timestamp: Date.now() });
+				this.transport.send({ type: 'RUN_OK', timestamp: Date.now(), requestId });
 			} else if (result.error) {
 				// Runtime error
-				this.errorReporter.report(result.error);
+				this.errorReporter.report(result.error, requestId);
 
 				// Attempt restore
 				if (this.lastWorkingCode && this.lastWorkingCode !== code) {
@@ -221,6 +298,8 @@ export class TextmodeEngine {
 		} finally {
 			this.isExecuting = false;
 			this.textmode.resume();
+			this.sendPlaybackState();
+			this.startPlaybackMonitor();
 		}
 	}
 
@@ -239,5 +318,202 @@ export class TextmodeEngine {
 		} catch (e) {
 			console.warn('Error during restoration:', e);
 		}
+	}
+
+	private getCapabilities(): RunnerCapabilities {
+		return {
+			protocolVersions: [PROTOCOL_VERSION, EDITOR_PROTOCOL_VERSION],
+			clients: ['synth', 'editor'],
+			runtimeConfig: true,
+			exports: ['image', 'svg', 'txt', 'gif', 'webm'],
+			fonts: true,
+			playback: true,
+			heartbeat: true,
+		};
+	}
+
+	private async handleExportMessage(message: ExportMessage): Promise<void> {
+		try {
+			switch (message.format) {
+				case 'image': {
+					const options = message.options && 'format' in message.options ? message.options : {};
+					const { blob, mimeType } = await this.textmode.exportImageBlob(options);
+					this.transport.send({
+						type: 'EXPORT_RESULT',
+						requestId: message.requestId,
+						format: 'image',
+						blob,
+						mimeType,
+					});
+					break;
+				}
+				case 'svg': {
+					const text = this.textmode.exportSvg((message.options ?? {}) as Record<string, unknown>);
+					this.transport.send({
+						type: 'EXPORT_RESULT',
+						requestId: message.requestId,
+						format: 'svg',
+						text,
+						mimeType: 'image/svg+xml',
+					});
+					break;
+				}
+				case 'txt': {
+					const text = this.textmode.exportTxt((message.options ?? {}) as Record<string, unknown>);
+					this.transport.send({
+						type: 'EXPORT_RESULT',
+						requestId: message.requestId,
+						format: 'txt',
+						text,
+						mimeType: 'text/plain',
+					});
+					break;
+				}
+				case 'gif':
+					await this.textmode.exportGif({
+						...(message.options ?? {}),
+						onProgress: (progress: unknown) => {
+							this.transport.send({
+								type: 'EXPORT_PROGRESS',
+								requestId: message.requestId,
+								format: 'gif',
+								progress: this.normalizeProgress(progress),
+							});
+						},
+					});
+					this.transport.send({
+						type: 'EXPORT_RESULT',
+						requestId: message.requestId,
+						format: 'gif',
+						mimeType: 'image/gif',
+					});
+					break;
+				case 'webm':
+					await this.textmode.exportWebm({
+						...(message.options ?? {}),
+						onProgress: (progress: unknown) => {
+							this.transport.send({
+								type: 'EXPORT_PROGRESS',
+								requestId: message.requestId,
+								format: 'webm',
+								progress: this.normalizeProgress(progress),
+							});
+						},
+					});
+					this.transport.send({
+						type: 'EXPORT_RESULT',
+						requestId: message.requestId,
+						format: 'webm',
+						mimeType: 'video/webm',
+					});
+					break;
+			}
+		} catch (error) {
+			this.errorReporter.report(error as Error, message.requestId);
+		}
+	}
+
+	private async handleLoadFontMessage(message: LoadFontMessage): Promise<void> {
+		try {
+			const fallbackName = message.fileName.replace(/\.[^/.]+$/, '').replace(/[_-]+/g, ' ').trim();
+			const metadata = await this.textmode.loadFontFromBuffer(
+				message.buffer,
+				message.mimeType,
+				fallbackName.length > 0 ? fallbackName : null
+			);
+
+			this.transport.send({
+				type: 'FONT_LOADED',
+				requestId: message.requestId,
+				familyName: metadata.familyName,
+				characters: metadata.characters,
+			});
+		} catch (error) {
+			this.transport.send({
+				type: 'FONT_ERROR',
+				requestId: message.requestId,
+				message: error instanceof Error ? error.message : String(error),
+			});
+		}
+	}
+
+	private handlePlaybackMessage(message: PlaybackMessage): void {
+		const state = this.textmode.applyPlaybackCommand({
+			action: message.action,
+			frame: message.frame,
+			maxFrames: message.maxFrames,
+		});
+
+		this.transport.send({
+			type: 'PLAYBACK_STATE',
+			requestId: message.requestId,
+			state,
+		});
+
+		if (state.isPlaying) {
+			this.startPlaybackMonitor();
+		} else {
+			this.stopPlaybackMonitor();
+		}
+	}
+
+	private sendPlaybackState(requestId?: string): void {
+		this.transport.send({
+			type: 'PLAYBACK_STATE',
+			requestId,
+			state: this.textmode.getPlaybackState(),
+		});
+	}
+
+	private startPlaybackMonitor(): void {
+		if (this.playbackMonitorId !== null) return;
+
+		this.lastPlaybackFrameSent = this.textmode.getPlaybackState().frame;
+		this.lastPlaybackStateSentAt = performance.now();
+
+		const tick = (timestamp: number) => {
+			let state = this.textmode.getPlaybackState();
+			if (!state.isPlaying) {
+				this.stopPlaybackMonitor();
+				this.sendPlaybackState();
+				return;
+			}
+
+			if (state.frame >= state.maxFrames - 1) {
+				this.textmode.applyPlaybackCommand({ action: 'seek', frame: 0 });
+				state = this.textmode.getPlaybackState();
+			}
+
+			if (state.frame !== this.lastPlaybackFrameSent || timestamp - this.lastPlaybackStateSentAt >= 1000) {
+				this.lastPlaybackStateSentAt = timestamp;
+				this.lastPlaybackFrameSent = state.frame;
+				this.sendPlaybackState();
+			}
+
+			this.playbackMonitorId = requestAnimationFrame(tick);
+		};
+
+		this.playbackMonitorId = requestAnimationFrame(tick);
+	}
+
+	private stopPlaybackMonitor(): void {
+		if (this.playbackMonitorId === null) return;
+		cancelAnimationFrame(this.playbackMonitorId);
+		this.playbackMonitorId = null;
+		this.lastPlaybackFrameSent = -1;
+	}
+
+	private normalizeProgress(progress: unknown): { state: string; frameIndex?: number; totalFrames?: number; message?: string } {
+		if (typeof progress !== 'object' || progress === null) {
+			return { state: 'recording' };
+		}
+
+		const record = progress as Record<string, unknown>;
+		return {
+			state: typeof record.state === 'string' ? record.state : 'recording',
+			frameIndex: typeof record.frameIndex === 'number' ? record.frameIndex : undefined,
+			totalFrames: typeof record.totalFrames === 'number' ? record.totalFrames : undefined,
+			message: typeof record.message === 'string' ? record.message : undefined,
+		};
 	}
 }

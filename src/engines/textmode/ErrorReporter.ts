@@ -15,10 +15,10 @@ export class ErrorReporter implements IErrorReporter {
         this.sendMessage = sendMessage;
     }
 
-    /**
-     * Report an error to the parent window
-     */
-	report(error: Error | string | Event | CodeError): void {
+	/**
+	 * Report an error to the parent window
+	 */
+	report(error: Error | string | Event | CodeError, requestId?: string): void {
         const runtimeError = normalizeError(error);
         this.sendMessage({
             type: 'RUN_ERROR',
@@ -26,6 +26,7 @@ export class ErrorReporter implements IErrorReporter {
             stack: runtimeError.stack,
             line: runtimeError.line,
             column: runtimeError.column,
+            requestId,
         });
     }
 }

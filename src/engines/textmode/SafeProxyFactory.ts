@@ -1,5 +1,4 @@
-import type { Textmodifier } from 'textmode.js';
-import type { TextmodeLayerManager, TextmodeLayer } from 'textmode.js/layering';
+import type { Textmodifier, TextmodeLayerManager, TextmodeLayer } from 'textmode.js';
 
 export interface SafeProxyOptions {
     /** Called when an error occurs in a draw callback */
@@ -48,6 +47,10 @@ export class SafeProxyFactory {
 
                 if (prop === 'layers') {
                     return this.createLayerManagerProxy(target.layers);
+                }
+
+                if (typeof value === 'function') {
+                    return value.bind(target);
                 }
 
                 return value;

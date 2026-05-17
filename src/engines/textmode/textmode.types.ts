@@ -5,6 +5,27 @@
 
 import type { Textmodifier } from 'textmode.js';
 import type { CodeError } from '@/core/types';
+import type { PlaybackAction } from '@/protocol/textmode';
+
+export interface RuntimeSettings {
+    width: number;
+    height: number;
+    fontSize: number;
+    frameRate: number;
+}
+
+export interface PlaybackCommand {
+    action: PlaybackAction;
+    frame?: number;
+    maxFrames?: number;
+}
+
+export interface PlaybackStateSnapshot {
+    isPlaying: boolean;
+    frame: number;
+    maxFrames: number;
+    fps?: number;
+}
 
 /**
  * Interface for textmode instance management
@@ -13,7 +34,11 @@ export interface ITextmodeManager {
     /** Get the textmode instance */
     getInstance(): Textmodifier | null;
     /** Initialize textmode */
-    init(): void;
+    init(settings?: Partial<RuntimeSettings>): void;
+    /** Configure textmode for a fixed-size editor runtime */
+    configure(settings: RuntimeSettings): void;
+    /** Update one or more settings */
+    updateSettings(settings: Partial<RuntimeSettings>): RuntimeSettings;
     /** Pause the animation loop */
     pause(): void;
     /** Resume the animation loop */
@@ -24,6 +49,10 @@ export interface ITextmodeManager {
     clearAllSynths(): void;
     /** Set up a handler for synth dynamic parameter errors */
     setupSynthErrorHandler(handler: (error: Error) => void): void;
+    /** Current playback state */
+    getPlaybackState(): PlaybackStateSnapshot;
+    /** Apply playback command */
+    applyPlaybackCommand(command: PlaybackCommand): PlaybackStateSnapshot;
 }
 
 /**
@@ -47,10 +76,11 @@ export interface ValidationResult {
 export interface PendingExecution {
 	code: string;
 	isSoftReset: boolean;
+	requestId?: string;
 }
 
 export interface IErrorReporter {
-	report(error: Error | string | Event | CodeError): void;
+	report(error: Error | string | Event | CodeError, requestId?: string): void;
 }
 
 export interface IFrameScheduler {

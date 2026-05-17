@@ -9,7 +9,7 @@ export interface HandshakeHandlerOptions {
 	/** Callback to attach the extracted MessagePort */
 	onPortExtracted: (port: MessagePort) => void;
 	/** Callback to signal that the handshake is complete and the runner is ready */
-	onReady: () => void;
+	onReady: (initMessage: unknown) => void;
 	/** Optional callback to handle the origin of the parent once it's established */
 	onOriginEstablished?: (origin: string) => void;
 }
@@ -50,7 +50,7 @@ export class HandshakeHandler {
 				this.options.onPortExtracted(port);
 
 				// 5. Signal readiness
-				this.options.onReady();
+				this.options.onReady(data);
 			}
 		};
 	}

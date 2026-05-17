@@ -4,7 +4,7 @@ export interface FrameSchedulerOptions {
     /** Callback to check if currently rendering */
     isRendering: () => boolean;
     /** Callback to execute the code */
-    onExecute: (code: string, isSoftReset: boolean) => void | Promise<void>;
+    onExecute: (code: string, isSoftReset: boolean, requestId?: string) => void | Promise<void>;
 }
 
 /**
@@ -62,8 +62,8 @@ export class FrameScheduler implements IFrameScheduler {
             return;
         }
 
-        const { code, isSoftReset } = this.pendingExecution;
+        const { code, isSoftReset, requestId } = this.pendingExecution;
         this.pendingExecution = null;
-        this.options.onExecute(code, isSoftReset);
+        this.options.onExecute(code, isSoftReset, requestId);
     }
 }

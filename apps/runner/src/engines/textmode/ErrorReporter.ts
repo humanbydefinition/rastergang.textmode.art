@@ -1,5 +1,5 @@
 import type { IErrorReporter } from './textmode.types';
-import type { RunnerToParentMessage } from '@/protocol/textmode';
+import type { RunnerToParentMessage } from '@textmode/runner-protocol';
 import { normalizeError } from '@/core/errors/normalizeError';
 import type { CodeError } from '@/core/types';
 

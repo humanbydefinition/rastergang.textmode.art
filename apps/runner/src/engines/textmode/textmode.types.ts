@@ -5,7 +5,7 @@
 
 import type { Textmodifier } from 'textmode.js';
 import type { CodeError } from '@/core/types';
-import type { PlaybackAction } from '@/protocol/textmode';
+import type { PlaybackAction } from '@textmode/runner-protocol';
 
 export interface RuntimeSettings {
     width: number;

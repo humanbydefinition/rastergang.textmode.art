@@ -5,6 +5,7 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			'@': path.resolve(__dirname, './src'),
+			'@textmode/runner-protocol': path.resolve(__dirname, '../../packages/runner-protocol/src/index.ts'),
 		},
 	},
 	test: {

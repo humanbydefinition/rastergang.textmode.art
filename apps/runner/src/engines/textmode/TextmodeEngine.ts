@@ -4,20 +4,18 @@ import { ExecutionContext } from '@/engines/textmode/ExecutionContext';
 import { ErrorReporter } from '@/engines/textmode/ErrorReporter';
 import { FrameScheduler } from '@/engines/textmode/FrameScheduler';
 import {
-	EDITOR_PROTOCOL_VERSION,
-	PROTOCOL_VERSION,
+	createRunnerCapabilities,
 	isInitMessage,
 	isParentMessage,
 	type ExportMessage,
 	type LoadFontMessage,
 	type ParentToRunnerMessage,
 	type PlaybackMessage,
-	type ProtocolVersion,
 	type RunnerCapabilities,
 	type RunnerToParentMessage,
 	type RuntimeSettings,
 	type WindowToRunnerMessage,
-} from '@/protocol/textmode';
+} from '@textmode/runner-protocol';
 
 import { HandshakeHandler } from '@/core/transport/HandshakeHandler';
 
@@ -36,7 +34,6 @@ export class TextmodeEngine {
 	private hasStarted = false;
 	private textmode: TextmodeManager;
 	private context: ExecutionContext;
-	private protocolVersion: ProtocolVersion = PROTOCOL_VERSION;
 	private synthErrorReported = false;
 	private isExecuting = false;
 	private playbackMonitorId: number | null = null;
@@ -77,14 +74,11 @@ export class TextmodeEngine {
 				this.transport.attach(port, this.handlePortMessage as (event: MessageEvent) => void);
 			},
 			onReady: (initMessage) => {
-				if (isInitMessage(initMessage)) {
-					this.protocolVersion = initMessage.v;
-				}
+				if (!isInitMessage(initMessage)) return;
 				window.removeEventListener('message', this.handleInitMessage);
 				this.transport.send({
 					type: 'READY',
-					v: this.protocolVersion,
-					capabilities: this.protocolVersion === EDITOR_PROTOCOL_VERSION ? this.getCapabilities() : undefined,
+					capabilities: this.getCapabilities(),
 				});
 			},
 		});
@@ -321,15 +315,7 @@ export class TextmodeEngine {
 	}
 
 	private getCapabilities(): RunnerCapabilities {
-		return {
-			protocolVersions: [PROTOCOL_VERSION, EDITOR_PROTOCOL_VERSION],
-			clients: ['synth', 'editor'],
-			runtimeConfig: true,
-			exports: ['image', 'svg', 'txt', 'gif', 'webm'],
-			fonts: true,
-			playback: true,
-			heartbeat: true,
-		};
+		return createRunnerCapabilities();
 	}
 
 	private async handleExportMessage(message: ExportMessage): Promise<void> {

@@ -8,13 +8,14 @@ import {
 } from '../src/index';
 
 describe('@textmode/runner-protocol', () => {
-	it('accepts the current init shape for editor and synth clients', () => {
-		expect(isInitMessage({ type: 'INIT', client: 'editor' })).toBe(true);
-		expect(isInitMessage({ type: 'INIT', client: 'synth' })).toBe(true);
+	it('accepts the current generic init shape', () => {
+		expect(isInitMessage({ type: 'INIT' })).toBe(true);
 	});
 
 	it('rejects retired runtime protocol version fields', () => {
-		expect(isInitMessage({ type: 'INIT', v: 1, client: 'synth' })).toBe(false);
+		expect(isInitMessage({ type: 'INIT', v: 1 })).toBe(false);
+		expect(isInitMessage({ type: 'INIT', client: 'editor' })).toBe(false);
+		expect(isInitMessage({ type: 'INIT', client: 'synth' })).toBe(false);
 		expect(
 			isRunnerMessage({
 				type: 'READY',
@@ -28,6 +29,12 @@ describe('@textmode/runner-protocol', () => {
 				protocolVersions: [1, 2],
 			})
 		).toBe(false);
+		expect(
+			isRunnerCapabilities({
+				...createRunnerCapabilities(),
+				clients: ['editor', 'synth'],
+			})
+		).toBe(false);
 	});
 
 	it('validates the current ready capabilities', () => {
@@ -35,7 +42,6 @@ describe('@textmode/runner-protocol', () => {
 
 		expect(isRunnerMessage({ type: 'READY', capabilities })).toBe(true);
 		expect(capabilities).toMatchObject({
-			clients: ['editor', 'synth'],
 			runtimeConfig: true,
 			exports: ['image', 'svg', 'txt', 'gif', 'webm'],
 			fonts: true,

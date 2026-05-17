@@ -1,18 +1,4 @@
 /**
- * Client identifiers that may connect to the runner iframe.
- *
- * @category Capabilities
- */
-export const RUNNER_CLIENTS = ['editor', 'synth'] as const;
-
-/**
- * Host app family supported by the runner protocol.
- *
- * @category Capabilities
- */
-export type RunnerClient = (typeof RUNNER_CLIENTS)[number];
-
-/**
  * Export families supported by the current runner.
  *
  * @category Capabilities
@@ -35,8 +21,6 @@ export type ExportFormat = (typeof EXPORT_FORMATS)[number];
  * @category Capabilities
  */
 export interface RunnerCapabilities {
-	/** Host app families accepted by this runner. */
-	clients: RunnerClient[];
 	/** Whether fixed runtime settings can be configured before execution. */
 	runtimeConfig: boolean;
 	/** Export formats available through the runner. */
@@ -57,7 +41,6 @@ export interface RunnerCapabilities {
  */
 export function createRunnerCapabilities(): RunnerCapabilities {
 	return {
-		clients: [...RUNNER_CLIENTS],
 		runtimeConfig: true,
 		exports: [...EXPORT_FORMATS],
 		fonts: true,

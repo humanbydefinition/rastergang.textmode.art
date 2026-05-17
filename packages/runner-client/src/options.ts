@@ -2,7 +2,6 @@ import type {
 	ExportProgress,
 	PlaybackState,
 	RunnerCapabilities,
-	RunnerClient,
 	RunOkMessage,
 } from '@textmode/runner-protocol';
 import type { RunnerExecutionError } from './errors';
@@ -46,8 +45,6 @@ export const DEFAULT_IFRAME_SANDBOX_TOKENS: readonly IframeSandboxToken[] = [
 export interface IframeTextmodeRuntimeOptions {
 	/** Absolute or parent-relative URL for the hosted runner app. */
 	runnerUrl: string;
-	/** Host app family connecting to the runner. Defaults to `editor`. */
-	client?: RunnerClient;
 	/** Iframe mount behavior. Defaults to `replace`. */
 	mountMode?: IframeMountMode;
 	/** Sandbox tokens applied to the runner iframe. */

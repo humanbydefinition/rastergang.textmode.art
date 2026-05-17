@@ -4,7 +4,7 @@
  * Shared message protocol for the textmode runner iframe.
  *
  * `@textmode/runner-protocol` is the single source of truth for the wire
- * contract used by the hosted runner, editor, synth, and future host apps.
+ * contract used by the hosted runner and browser host apps.
  * Runtime protocol version negotiation is intentionally absent: package semver
  * describes source compatibility, while this package describes the one current
  * message shape. Feature availability is advertised through capabilities.
@@ -14,11 +14,9 @@
 
 export {
 	EXPORT_FORMATS,
-	RUNNER_CLIENTS,
 	createRunnerCapabilities,
 	type ExportFormat,
 	type RunnerCapabilities,
-	type RunnerClient,
 } from './capabilities';
 export {
 	type ExportProgress,

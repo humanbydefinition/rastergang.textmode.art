@@ -1,4 +1,4 @@
-import { EXPORT_FORMATS, RUNNER_CLIENTS, type ExportFormat, type RunnerClient } from './capabilities';
+import { EXPORT_FORMATS, type ExportFormat } from './capabilities';
 import type { ExportProgress } from './exports';
 import type { PlaybackAction, PlaybackState } from './playback';
 import type { RuntimeSettings } from './runtime';
@@ -43,10 +43,6 @@ export function isPartialRuntimeSettings(value: unknown): value is Partial<Runti
 		(value.fontSize === undefined || isPositiveFiniteNumber(value.fontSize)) &&
 		(value.frameRate === undefined || isPositiveFiniteNumber(value.frameRate))
 	);
-}
-
-export function isRunnerClient(value: unknown): value is RunnerClient {
-	return RUNNER_CLIENTS.includes(value as RunnerClient);
 }
 
 export function isExportFormat(value: unknown): value is ExportFormat {

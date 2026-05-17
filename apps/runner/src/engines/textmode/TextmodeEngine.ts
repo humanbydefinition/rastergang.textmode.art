@@ -177,10 +177,10 @@ export class TextmodeEngine {
 	}
 
 	/**
-	 * Initialize Textmode environment lazily. v2 editor clients send
-	 * CONFIGURE_RUNTIME first so the first canvas is created with editor
-	 * dimensions; v1 synth clients still get the legacy default runtime on
-	 * their first RUN_CODE.
+	 * Initialize Textmode environment lazily. Configurable hosts send
+	 * CONFIGURE_RUNTIME first so the initial canvas is created with their
+	 * requested dimensions; hosts without explicit settings get the legacy
+	 * default runtime on their first RUN_CODE.
 	 */
 	private ensureRuntimeInitialized(settings?: Partial<RuntimeSettings>): void {
 		if (!this.runtimeInitialized) {

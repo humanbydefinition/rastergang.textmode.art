@@ -265,14 +265,13 @@ describe('@textmode/runner-client', () => {
 		const env = installFakeBrowser();
 		const runtime = new IframeTextmodeRuntime({
 			runnerUrl: 'https://runner.textmode.art/',
-			client: 'synth',
 		});
 
 		const readyPromise = runtime.init(env.container as unknown as HTMLElement);
 		env.iframe.dispatch('load');
 
 		expect(env.iframe.contentWindow.postMessage).toHaveBeenCalledWith(
-			{ type: 'INIT', client: 'synth' },
+			{ type: 'INIT' },
 			'https://runner.textmode.art',
 			[env.channel.port2]
 		);
@@ -292,7 +291,7 @@ describe('@textmode/runner-client', () => {
 		runtime.dispose();
 	});
 
-	it('rejects READY messages with unsupported capabilities', async () => {
+	it('rejects READY messages with missing required capabilities', async () => {
 		const onUnavailable = vi.fn();
 		const env = installFakeBrowser();
 		const runtime = new IframeTextmodeRuntime({
@@ -306,13 +305,13 @@ describe('@textmode/runner-client', () => {
 			type: 'READY',
 			capabilities: {
 				...capabilities,
-				clients: ['synth'],
+				runtimeConfig: false,
 			},
 		});
 
-		await expect(readyPromise).rejects.toThrow('runner does not advertise editor client support');
+		await expect(readyPromise).rejects.toThrow('runner does not support runtime configuration');
 		expect(runtime.status).toBe('unavailable');
-		expect(onUnavailable).toHaveBeenCalledWith('runner does not advertise editor client support', 'unavailable');
+		expect(onUnavailable).toHaveBeenCalledWith('runner does not support runtime configuration', 'unavailable');
 	});
 
 	it('routes run success and request-scoped run errors', async () => {

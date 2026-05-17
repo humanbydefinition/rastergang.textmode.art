@@ -1,4 +1,4 @@
-import type { RunnerCapabilities, RunnerClient } from './capabilities';
+import type { RunnerCapabilities } from './capabilities';
 import type { ExportProgress, ExportRequest } from './exports';
 import type { PlaybackAction, PlaybackState } from './playback';
 import type { RuntimeSettings } from './runtime';
@@ -10,8 +10,6 @@ import type { RuntimeSettings } from './runtime';
  */
 export interface InitMessage {
 	type: 'INIT';
-	/** Host app family initiating the connection. */
-	client: RunnerClient;
 }
 
 /**
@@ -34,7 +32,7 @@ export interface RunOkMessage {
 	type: 'RUN_OK';
 	/** Runner-side completion timestamp. */
 	timestamp: number;
-	/** Request identifier when the run was initiated by a request/response client. */
+	/** Request identifier when the run was initiated by a request/response host. */
 	requestId?: string;
 }
 

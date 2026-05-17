@@ -14,7 +14,6 @@ import {
 	type ReadyMessage,
 	type RunErrorMessage,
 	type RunnerCapabilities,
-	type RunnerClient,
 	type RunnerToParentMessage,
 	type RunOkMessage,
 	type RuntimeSettings,
@@ -59,7 +58,6 @@ export class IframeTextmodeRuntime {
 	private readonly handshakeTimeoutMs: number;
 	private readonly requestTimeoutMs: number;
 	private readonly options: IframeTextmodeRuntimeOptions;
-	private readonly client: RunnerClient;
 	private readonly mountMode: IframeMountMode;
 	private readonly pending = new RequestRegistry();
 	private readonly heartbeat: HeartbeatController;
@@ -78,7 +76,6 @@ export class IframeTextmodeRuntime {
 
 	constructor(options: IframeTextmodeRuntimeOptions) {
 		this.options = options;
-		this.client = options.client ?? 'editor';
 		this.mountMode = options.mountMode ?? 'replace';
 		const runnerLocation = new URL(options.runnerUrl, window.location.href);
 		this.runnerHref = runnerLocation.href;
@@ -435,7 +432,6 @@ export class IframeTextmodeRuntime {
 
 		const initMessage: InitMessage = {
 			type: 'INIT',
-			client: this.client,
 		};
 		this.iframe.contentWindow.postMessage(initMessage, this.runnerOrigin, [this.channel.port2]);
 	}
@@ -605,10 +601,6 @@ export class IframeTextmodeRuntime {
 
 		if (!isRunnerCapabilities(capabilities)) {
 			return 'runner did not advertise a valid current capability set';
-		}
-
-		if (!capabilities.clients.includes(this.client)) {
-			return `runner does not advertise ${this.client} client support`;
 		}
 
 		if (!capabilities.runtimeConfig) {

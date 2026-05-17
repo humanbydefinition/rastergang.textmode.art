@@ -11,7 +11,6 @@ import {
 	isPartialRuntimeSettings,
 	isPlaybackAction,
 	isPlaybackState,
-	isRunnerClient,
 	isRuntimeSettings,
 } from './guards.internal';
 
@@ -125,7 +124,7 @@ export function isParentMessage(msg: unknown): msg is ParentToRunnerMessage {
  * @category Guards
  */
 export function isInitMessage(msg: unknown): msg is InitMessage {
-	return isMessageRecord(msg) && msg.type === 'INIT' && !('v' in msg) && isRunnerClient(msg.client);
+	return isMessageRecord(msg) && msg.type === 'INIT' && Object.keys(msg).length === 1;
 }
 
 /**
@@ -136,10 +135,9 @@ export function isInitMessage(msg: unknown): msg is InitMessage {
 export function isRunnerCapabilities(value: unknown): value is RunnerCapabilities {
 	if (!isMessageRecord(value)) return false;
 	if ('protocolVersions' in value) return false;
+	if ('clients' in value) return false;
 
 	return (
-		Array.isArray(value.clients) &&
-		value.clients.every(isRunnerClient) &&
 		typeof value.runtimeConfig === 'boolean' &&
 		Array.isArray(value.exports) &&
 		value.exports.every(isExportFormat) &&

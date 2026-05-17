@@ -1,5 +1,5 @@
 /**
- * Fixed runtime dimensions and timing used by editor-style runner clients.
+ * Fixed runtime dimensions and timing used by configurable runner hosts.
  *
  * @category Runtime
  */

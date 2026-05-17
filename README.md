@@ -7,7 +7,7 @@
 
 </div>
 
-`runner.textmode.art` is a browser-based sandbox runner for [`synth.textmode.art`](https://synth.textmode.art). It runs user sketches inside an isolated iframe, boots a `textmode.js` rendering context, and communicates execution state back to the parent editor over a small message protocol.
+`runner.textmode.art` is a browser-based sandbox runner for textmode host apps. It runs user sketches inside an isolated iframe, boots a `textmode.js` rendering context, and communicates execution state back to the parent app over a small message protocol.
 
 ## Features
 
@@ -19,7 +19,7 @@
 
 ## Getting started
 
-This app is intended to be embedded by **[synth.textmode.art](https://synth.textmode.art)**.
+This app is intended to be embedded by textmode host apps such as **[synth.textmode.art](https://synth.textmode.art)** and **[editor.textmode.art](https://editor.textmode.art)**.
 
 For the production deployment, the iframe is served from **[runner.textmode.art](https://runner.textmode.art)**.
 
@@ -50,7 +50,7 @@ Environment variables:
 
 - `VITE_RUNNER_PARENT_ORIGINS`: Comma-separated list of allowed parent origins. Defaults to `*` in development and an empty list in production when unset.
 
-The example configuration in `.env.example` allows `https://synth.textmode.art` as the production parent origin.
+The example configuration in `.env.example` allows `https://synth.textmode.art` and `https://editor.textmode.art` as production parent origins.
 
 When opened directly in development, the runner allows top-level debugging with `?debug`; otherwise it redirects to the parent editor URL.
 

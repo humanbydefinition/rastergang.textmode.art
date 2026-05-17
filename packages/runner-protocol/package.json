@@ -18,9 +18,7 @@
     },
     "files": [
         "dist/**/*.d.ts",
-        "dist/**/*.d.ts.map",
-        "dist/**/*.js",
-        "src"
+        "dist/**/*.js"
     ],
     "scripts": {
         "build": "tsc -b",

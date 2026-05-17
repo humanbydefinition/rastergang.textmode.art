@@ -1,7 +1,7 @@
 {
     "name": "@textmode/runner-client",
-    "private": true,
-    "version": "0.0.0",
+    "version": "0.1.0",
+    "description": "Browser iframe runtime client for the hosted textmode runner.",
     "license": "AGPL-3.0-or-later",
     "type": "module",
     "sideEffects": false,
@@ -12,6 +12,9 @@
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js"
         }
+    },
+    "publishConfig": {
+        "access": "public"
     },
     "files": [
         "dist/**/*.d.ts",
@@ -29,6 +32,6 @@
         "prepare": "npm run build"
     },
     "dependencies": {
-        "@textmode/runner-protocol": "file:../runner-protocol"
+        "@textmode/runner-protocol": "^0.1.0"
     }
 }

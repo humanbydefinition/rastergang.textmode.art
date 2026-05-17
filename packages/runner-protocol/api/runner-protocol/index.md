@@ -8,7 +8,7 @@ editLink: true
 Shared message protocol for the textmode runner iframe.
 
 `@textmode/runner-protocol` is the single source of truth for the wire
-contract used by the hosted runner, editor, synth, and future host apps.
+contract used by the hosted runner and browser host apps.
 Runtime protocol version negotiation is intentionally absent: package semver
 describes source compatibility, while this package describes the one current
 message shape. Feature availability is advertised through capabilities.
@@ -17,8 +17,6 @@ message shape. Feature availability is advertised through capabilities.
 
 | Name | Description |
 | ------ | ------ |
-| [RUNNER\_CLIENTS](variables/RUNNER_CLIENTS.md) | Client identifiers that may connect to the runner iframe. |
-| [RunnerClient](type-aliases/RunnerClient.md) | Host app family supported by the runner protocol. |
 | [EXPORT\_FORMATS](variables/EXPORT_FORMATS.md) | Export families supported by the current runner. |
 | [ExportFormat](type-aliases/ExportFormat.md) | Export format advertised by runner capabilities and export messages. |
 | [RunnerCapabilities](interfaces/RunnerCapabilities.md) | Feature flags advertised by a ready runner iframe. |
@@ -88,4 +86,4 @@ message shape. Feature availability is advertised through capabilities.
 
 | Interface | Description |
 | ------ | ------ |
-| [RuntimeSettings](interfaces/RuntimeSettings.md) | Fixed runtime dimensions and timing used by editor-style runner clients. |
+| [RuntimeSettings](interfaces/RuntimeSettings.md) | Fixed runtime dimensions and timing used by configurable runner hosts. |

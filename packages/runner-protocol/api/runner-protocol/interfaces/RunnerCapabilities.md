@@ -16,7 +16,6 @@ protocol version negotiation mechanism.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="property-clients"></a> `clients` | (`"editor"` \| `"synth"`)[] | Host app families accepted by this runner. |
 | <a id="property-runtimeconfig"></a> `runtimeConfig` | `boolean` | Whether fixed runtime settings can be configured before execution. |
 | <a id="property-exports"></a> `exports` | (`"image"` \| `"svg"` \| `"txt"` \| `"gif"` \| `"webm"`)[] | Export formats available through the runner. |
 | <a id="property-fonts"></a> `fonts` | `boolean` | Whether host apps can load fonts into the runner. |

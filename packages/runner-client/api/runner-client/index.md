@@ -5,12 +5,12 @@ editLink: true
 
 # @textmode/runner-client
 
-Browser iframe client for the hosted textmode runner.
+Browser iframe runtime client for the hosted textmode runner.
 
 `@textmode/runner-client` manages the runner iframe lifecycle, current
 protocol handshake, request/response routing, heartbeat monitoring, export
 helpers, font loading, playback control, reconnect, and disposal for host
-apps such as the editor and synth.
+apps.
 
 ## Errors
 

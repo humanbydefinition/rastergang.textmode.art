@@ -14,7 +14,6 @@ Options for [IframeTextmodeRuntime](../classes/IframeTextmodeRuntime.md).
 | Property | Type | Description |
 | ------ | ------ | ------ |
 | <a id="property-runnerurl"></a> `runnerUrl` | `string` | Absolute or parent-relative URL for the hosted runner app. |
-| <a id="property-client"></a> `client?` | `"editor"` \| `"synth"` | Host app family connecting to the runner. Defaults to `editor`. |
 | <a id="property-mountmode"></a> `mountMode?` | [`IframeMountMode`](../type-aliases/IframeMountMode.md) | Iframe mount behavior. Defaults to `replace`. |
 | <a id="property-sandboxtokens"></a> `sandboxTokens?` | [`IframeSandboxToken`](../type-aliases/IframeSandboxToken.md)[] | Sandbox tokens applied to the runner iframe. |
 | <a id="property-handshaketimeoutms"></a> `handshakeTimeoutMs?` | `number` | Timeout for the initial iframe MessagePort handshake. |

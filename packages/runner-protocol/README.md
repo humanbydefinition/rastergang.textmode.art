@@ -118,4 +118,4 @@ Generated TypeDoc Markdown lives in [`api/runner-protocol`](./api/runner-protoco
 
 ## License
 
-AGPL-3.0-or-later. See [LICENSE](./LICENSE).
+CC0-1.0. See [LICENSE](./LICENSE).

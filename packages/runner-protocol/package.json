@@ -1,8 +1,8 @@
 {
     "name": "@textmode/runner-protocol",
-    "private": true,
-    "version": "0.0.0",
-    "license": "AGPL-3.0-or-later",
+    "version": "0.1.0",
+    "description": "Shared message protocol and validators for the hosted textmode runner iframe.",
+    "license": "CC0-1.0",
     "type": "module",
     "sideEffects": false,
     "main": "./dist/index.js",
@@ -12,6 +12,9 @@
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js"
         }
+    },
+    "publishConfig": {
+        "access": "public"
     },
     "files": [
         "dist/**/*.d.ts",
